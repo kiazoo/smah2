@@ -1,0 +1,9 @@
+# Core messaging
+pyzmq==25.1.0
+
+# Utilities
+python-dateutil==2.8.2
+PyYAML==6.0
+
+# Optional (แนะนำไว้ล่วงหน้า ใช้กับ health / logging / future extension)
+psutil==5.9.0

@@ -1,0 +1,21 @@
+# Python Virtual Environment
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# IDE specific files (e.g., VS Code, PyCharm)
+.idea/
+.vscode/
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Dependencies file (if using pipenv or poetry)
+Pipfile.lock
+poetry.lock
+
+# Log and data files
+*.log
+data/

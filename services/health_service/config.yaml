@@ -1,0 +1,59 @@
+service:
+  name: health-service
+
+comm_core:
+  endpoint: "tcp://127.0.0.1:5555"
+
+health:
+  heartbeat_timeout_sec: 15
+
+auto_publish:
+  enabled: true
+  interval_sec: 5
+
+  # ส่ง snapshot ออกไปหา service อื่น
+  targets:
+    - service: "monitor-service"
+      action: "health.snapshot"
+    - service: "dashboard-service"
+      action: "health.snapshot"
+
+logging:
+  level: INFO
+
+services:
+  - name: rs485-driver
+    service_id: video-01
+    enabled: true
+    exec:
+      restart: "systemctl restart rs485-driver"
+    policy:
+      max_retry: 3
+      cooldown_sec: 10
+
+  - name: rs232-driver
+    service_id: video-01
+    enabled: true
+    exec:
+      restart: "systemctl restart rs232-driver"
+    policy:
+      max_retry: 3
+      cooldown_sec: 10
+
+  - name: ble-driver
+    service_id: video-01
+    enabled: true
+    exec:
+      restart: "systemctl restart ble-driver"
+    policy:
+      max_retry: 3
+      cooldown_sec: 10
+
+  - name: iomodule-handle
+    service_id: video-01
+    enabled: true
+    exec:
+      restart: "systemctl restart iomodule-handle"
+    policy:
+      max_retry: 3
+      cooldown_sec: 10
