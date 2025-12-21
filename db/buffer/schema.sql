@@ -1,18 +1,16 @@
 PRAGMA journal_mode=WAL;
 PRAGMA synchronous=NORMAL;
 
-CREATE TABLE IF NOT EXISTS telemetry_buffer (
+CREATE TABLE IF NOT EXISTS uplink_buffer (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    platform_name TEXT NOT NULL,
-    target_endpoint TEXT,
-    payload JSON NOT NULL,
-    content_type TEXT,
-    status TEXT NOT NULL DEFAULT 'queued',
-    retry_count INTEGER NOT NULL DEFAULT 0,
-    next_retry_at TEXT,
-    last_error TEXT
+    timestamp TEXT NOT NULL,
+    uplink_name TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    retry_count INTEGER DEFAULT 0
 );
 
-CREATE INDEX IF NOT EXISTS idx_buffer_status_time ON telemetry_buffer(status, created_at);
-CREATE INDEX IF NOT EXISTS idx_buffer_next_retry ON telemetry_buffer(status, next_retry_at);
+CREATE INDEX IF NOT EXISTS idx_uplink_buffer_name
+ON uplink_buffer(uplink_name);
+
+CREATE INDEX IF NOT EXISTS idx_uplink_buffer_ts
+ON uplink_buffer(timestamp);

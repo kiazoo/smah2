@@ -1,7 +1,7 @@
 #!/bin/bash
+PROJECT_ROOT="/home/dtcaiot/SMART-SHOP-APP"
+VENV_PYTHON="$PROJECT_ROOT/venv/bin/python"
 
-# Activate virtual environment
-source venv/bin/activate
+cd "$PROJECT_ROOT" || exit 1
 
-# Run the broker
-python3 -m core.broker
+exec "$VENV_PYTHON" -m services.comm-core.core.broker

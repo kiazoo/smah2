@@ -194,20 +194,24 @@ zmq_helper ─── logger_client ─── db_helper
 |buffer_client|🟡 v1.5|
 
 🧩 Design Principles
-
 Shared lib = ไม่มี business logic
-
 Service = ใช้ shared lib เป็น dependency
-
 เปลี่ยน protocol / DB / transport → แก้ที่ shared lib จุดเดียว
-
 Version shared lib ชัดเจน (v1, v2)
 
 ## 📌 Recommendation
-
 ใช้ shared lib ชุดนี้เป็น canonical foundation
-
 Service ใหม่ทุกตัว ต้อง import จาก shared
-
 ถ้าจะเพิ่ม feature → เพิ่มใน shared ก่อนเสมอ
 
+
+# 🤝 License
+
+โปรเจกต์นี้ใช้ภายใน Smartshop AI / DTC Enterprise
+
+# 💗 Contact
+
+ผู้ดูแลโปรเจกต์
+>P’ Jum — AIoT R&D & Sourcing Manager   
+>Pink - Assistance  
+>D.T.C. Enterprise

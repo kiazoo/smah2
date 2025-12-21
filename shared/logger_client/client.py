@@ -1,10 +1,16 @@
 from .formatter import format_log
 from .db_writer import write_log
-from .zmq_publisher import publish_log
+
+from shared.config_loader import config
+from shared.zmq_helper.client import ZMQClient
 
 class LoggerClient:
     def __init__(self, service_name):
         self.service_name = service_name
+        self.log_service = config.get("LOG_SERVICE_NAME", "log-service")
+
+        # best-effort sender (ผ่าน broker)
+        self.zmq = ZMQClient(service_name=self.service_name)
 
     def _log(self, level, message, trace_id=None, extra=None):
         record = format_log(
@@ -15,12 +21,22 @@ class LoggerClient:
             extra=extra,
         )
 
-        # 1) write local DB (reliable)
+        # 1) local DB (reliable)
         write_log(record)
 
-        # 2) publish via ZMQ (best effort)
+        # 2) send to log-service via broker (best effort)
         try:
-            publish_log(record)
+            # ensure register once (simple safe approach)
+            self.zmq.register()
+        except Exception:
+            pass
+
+        try:
+            self.zmq.send_request(
+                dst=self.log_service,
+                action="log",
+                payload=record,
+            )
         except Exception:
             pass
 
