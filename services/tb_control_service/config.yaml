@@ -1,0 +1,10 @@
+thingsboard:
+  host: xio.dtciot.com
+  port: 1883
+  token: WT7HpMvCBTcWacCCYH6a
+
+broker:
+  address: tcp://127.0.0.1:5555
+
+service:
+  name: tb_control_service

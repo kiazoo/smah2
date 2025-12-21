@@ -1,39 +1,69 @@
 import requests
 from .base import UplinkBase
-from .mqtt import MqttUplink
-
 
 class ThingsBoardUplink(UplinkBase):
-    """
-    Supports:
-    - HTTP telemetry: POST http://host/api/v1/{token}/telemetry
-    - MQTT telemetry: topic v1/devices/me/telemetry with token as username
-    """
-
-    def __init__(self, name: str, protocol: str, host: str, token: str, timeout_sec: int = 5):
+    def __init__(self, name: str, protocol: str, host: str, token: str):
         super().__init__(name)
-        self.protocol = (protocol or "http").lower()
+        self.protocol = protocol.lower()
         self.host = host
         self.token = token
-        self.timeout_sec = timeout_sec
 
-        if self.protocol == "mqtt":
-            self.mqtt = MqttUplink(
-                name=name,
-                host=host,
-                port=1883,
-                topic="v1/devices/me/telemetry",
-                username=token,
-                password="",
-                qos=1,
-            )
+    def send(self, payload: dict):
+        telemetry = self._flatten_payload(payload)
+
+        if not telemetry:
+            print("[TB DEBUG] telemetry EMPTY -> skip send", flush=True)
+            return
+
+        if self.protocol == "http":
+            self._send_http(telemetry)
+        elif self.protocol == "mqtt":
+            self._send_mqtt(telemetry)
         else:
-            self.mqtt = None
+            raise ValueError(f"unsupported protocol: {self.protocol}")
 
+    # ---------- HTTP ----------
+    def _send_http(self, telemetry: dict):
+        url = f"https://{self.host}/api/v1/{self.token}/telemetry"
+
+        headers = {
+            "Content-Type": "application/json",
+        }
+
+        print("========== TB SEND DEBUG ==========")
+        print("[TB DEBUG] protocol = https")
+        print(f"[TB DEBUG] POST {url}")
+        print(f"[TB DEBUG] telemetry = {telemetry}")
+
+        resp = requests.post(
+            url,
+            headers=headers,
+            json=telemetry,
+            timeout=5,
+            allow_redirects=False,   # << สำคัญมาก
+        )
+
+        print(f"[TB DEBUG] HTTP status={resp.status_code}")
+        print(f"[TB DEBUG] body={resp.text}")
+        print("=================================")
+
+        if resp.status_code in (301, 302, 307, 308):
+            raise RuntimeError(
+                f"TB redirected status={resp.status_code}, location={resp.headers.get('Location')}"
+            )
+
+        if resp.status_code not in (200, 201):
+            raise RuntimeError(
+                f"TB HTTP failed status={resp.status_code}, body={resp.text}"
+            )
+
+
+    # ---------- MQTT (ยังไม่ใช้ก็ได้) ----------
+    def _send_mqtt(self, telemetry: dict):
+        raise NotImplementedError("TB MQTT not implemented yet")
+
+    # ---------- FLATTEN ----------
     def _flatten_payload(self, payload: dict) -> dict:
-        """
-        Convert aggregated payload to ThingsBoard telemetry format (flat key-value).
-        """
         flat = {}
 
         services = payload.get("services", {})
@@ -42,6 +72,8 @@ class ThingsBoardUplink(UplinkBase):
                 if isinstance(data, dict):
                     for k, v in data.items():
                         flat[f"{svc}_{k}"] = v
+                else:
+                    flat[svc] = data
 
         health = payload.get("health", {})
         if isinstance(health, dict):
@@ -49,39 +81,7 @@ class ThingsBoardUplink(UplinkBase):
                 if isinstance(data, dict):
                     for k, v in data.items():
                         flat[f"health_{section}_{k}"] = v
+                else:
+                    flat[f"health_{section}"] = data
 
         return flat
-
-    def send(self, payload: dict) -> None:
-        print("\n========== TB SEND DEBUG ==========", flush=True)
-        print(f"[TB DEBUG] protocol = {self.protocol}", flush=True)
-        print(f"[TB DEBUG] raw payload = {payload}", flush=True)
-
-        telemetry = self._flatten_payload(payload)
-        print(f"[TB DEBUG] flattened telemetry = {telemetry}", flush=True)
-
-        if not telemetry:
-            print("[TB DEBUG] telemetry EMPTY -> skip send", flush=True)
-            print("=================================\n", flush=True)
-            return
-
-        if self.protocol == "mqtt":
-            print("[TB DEBUG] send via MQTT", flush=True)
-            self.mqtt.send(telemetry)
-            print("=================================\n", flush=True)
-            return
-
-        url = f"http://{self.host}/api/v1/{self.token}/telemetry"
-        print(f"[TB DEBUG] POST {url}", flush=True)
-
-        r = requests.post(url, json=telemetry, timeout=self.timeout_sec)
-        print(
-            f"[TB DEBUG] HTTP status={r.status_code} body={r.text}",
-            flush=True,
-        )
-        print("=================================\n", flush=True)
-
-        if r.status_code < 200 or r.status_code >= 300:
-            raise RuntimeError(
-                f"TB HTTP failed status={r.status_code}, body={r.text[:200]}"
-            )

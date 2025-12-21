@@ -1,43 +1,39 @@
 device:
   id: SMARTSHOP-001
-
 broker:
   address: tcp://127.0.0.1:5555
-
 health:
   service_name: health-service
   action_snapshot: get_snapshot
   timeout_ms: 1200
-
 buffer:
   max_records: 1000
   flush_batch: 50
   flush_interval_sec: 5
-
 uplinks:
-  - name: primary_mqtt
-    enabled: false
-    type: mqtt
-    interval_sec: 10
-    server:
-      host: 127.0.0.1
-      port: 1883
-      username: ""
-      password: ""
-    topic: smartshop/data
-    qos: 1
-
-  - name: primary_http
-    enabled: false
-    type: http
-    interval_sec: 30
-    url: http://127.0.0.1:8081/uplink
-    headers: {}
-
-  - name: thingsboard
-    enabled: true
-    type: thingsboard
-    protocol: http
-    interval_sec: 15
-    host: xio.dtciot.com
-    token: WT7HpMvCBTcWacCCYH6a
+- name: primary_mqtt
+  enabled: false
+  type: mqtt
+  interval_sec: 10
+  server:
+    host: 127.0.0.1
+    port: 1883
+    username: ''
+    password: ''
+  topic: smartshop/data
+  qos: 1
+- name: http_test
+  type: http
+  enabled: true
+  interval_sec: 10
+  url: http://203.150.210.39:8900/uplink
+  headers:
+    Content-Type: application/json
+    X-From: smartshop
+- name: thingsboard
+  enabled: true
+  type: thingsboard
+  protocol: http
+  interval_sec: 10
+  host: xio.dtciot.com
+  token: WT7HpMvCBTcWacCCYH6a
