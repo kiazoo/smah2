@@ -1,0 +1,34 @@
+service:
+  name: io_control_service
+
+comm_core:
+  endpoint: tcp://127.0.0.1:5555
+
+polling:
+  interval_sec: 2
+
+driver:
+  service_name: modbus_driver_service
+
+rtu_devices:
+  - name: rtu_1
+    slave_id: 1
+    baudrate: 9600
+    parity: N
+    stopbits: 1
+
+  - name: rtu_2
+    slave_id: 2
+    baudrate: 9600
+
+  - name: rtu_3
+    slave_id: 3
+    baudrate: 9600
+
+  - name: rtu_4
+    slave_id: 4
+    baudrate: 9600
+
+log:
+  level: INFO        # DEBUG | INFO | WARN | ERROR
+  log_modbus_hex: false   # true = log raw modbus frame

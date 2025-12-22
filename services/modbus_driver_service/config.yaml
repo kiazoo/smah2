@@ -1,0 +1,12 @@
+service:
+  name: modbus_driver_service
+
+comm_core:
+  endpoint: tcp://127.0.0.1:5555
+
+serial:
+  port: /dev/ttyS0
+
+log:
+  level: INFO
+  log_hex: false
