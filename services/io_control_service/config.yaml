@@ -1,0 +1,59 @@
+service:
+  name: io_control_service
+
+comm_core:
+  # ZeroMQ broker endpoint for internal messaging
+  endpoint: tcp://127.0.0.1:5555
+
+# Polling configuration
+polling:
+  # Interval in seconds between successive polls of all RTU devices
+  interval_sec: 2
+
+# Name of the Modbus driver service to which requests should be sent
+driver:
+  service_name: modbus_driver_service
+
+# List of Modbus RTU devices to poll.  Each device requires at least
+# a slave_id.  Optional serial parameters (baudrate, parity, stopbits,
+# bytesize, timeout) may be specified per device; otherwise defaults
+# defined in the io_control_service code will be used.
+rtu_devices:
+  - name: rtu_1
+    slave_id: 1
+    baudrate: 9600
+    parity: N
+    stopbits: 1
+    bytesize: 8
+    timeout: 1.0
+
+  - name: rtu_2
+    slave_id: 2
+    baudrate: 9600
+    parity: N
+    stopbits: 1
+    bytesize: 8
+    timeout: 1.0
+
+  - name: rtu_3
+    slave_id: 3
+    baudrate: 9600
+    parity: N
+    stopbits: 1
+    bytesize: 8
+    timeout: 1.0
+
+  - name: rtu_4
+    slave_id: 4
+    baudrate: 9600
+    parity: N
+    stopbits: 1
+    bytesize: 8
+    timeout: 1.0
+
+# Logging configuration
+log:
+  # Log level: DEBUG, INFO, WARN, or ERROR
+  level: INFO
+  # Enable to log raw Modbus frames sent to the driver
+  log_modbus_hex: false

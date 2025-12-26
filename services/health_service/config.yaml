@@ -8,15 +8,15 @@ health:
   heartbeat_timeout_sec: 15
 
 auto_publish:
-  enabled: true
+  enabled: false
   interval_sec: 5
 
   # ส่ง snapshot ออกไปหา service อื่น
   targets:
-    - service: "monitor-service"
-      action: "health.snapshot"
-    - service: "dashboard-service"
-      action: "health.snapshot"
+  #  - service: "monitor-service"
+  #    action: "health.snapshot"
+  #  - service: "dashboard-service"
+  #    action: "health.snapshot"
 
 logging:
   level: INFO

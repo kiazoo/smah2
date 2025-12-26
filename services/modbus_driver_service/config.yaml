@@ -1,0 +1,26 @@
+service:
+  name: modbus_driver_service
+
+comm_core:
+  endpoint: tcp://127.0.0.1:5555
+
+serial:
+  port: /dev/ttyS0
+  # default cfg (ใช้เมื่อ request ไม่ส่งมา)
+  defaults:
+    baudrate: 9600
+    parity: N
+    stopbits: 1
+    bytesize: 8
+    timeout: 1.0
+    end_silence_ms: 50
+    max_rx_bytes: 512
+
+driver:
+  queue_max: 200
+  keepalive_register_sec: 30   # (3) re-register keepalive
+
+log:
+  level: DEBUG                 # (4) ส่ง log ไป log_service
+  log_hex: true                # log tx/rx hex
+  print_debug: true            # ยัง print ใน console เผื่อดูเร็วๆ
