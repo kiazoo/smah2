@@ -10,6 +10,18 @@ class ConfigManager:
         self._mtime = 0
         self.cfg = {}
 
+    def write(self, cfg: dict):
+        """
+        Write config to file and update internal state
+        """
+        with open(self.path, "w", encoding="utf-8") as f:
+            yaml.safe_dump(cfg, f, sort_keys=False)
+
+        # update internal state
+        self.cfg = cfg
+        self._mtime = os.path.getmtime(self.path)
+
+
     def load(self) -> dict:
         with open(self.path, "r", encoding="utf-8") as f:
             return yaml.safe_load(f) or {}

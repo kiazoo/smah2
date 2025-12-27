@@ -1,76 +1,56 @@
+from typing import Dict
 import yaml
-from typing import Dict, Tuple
 
 
-# =========================================================
-# PUSH DATA HANDLER
-# =========================================================
+def handle_push_data(aggregator, msg: dict, uplink_name: str):
+    print("[DEBUG][handler] msg =", msg, flush=True)
 
-def handle_push_data(aggregator, payload: dict, uplink_name: str):
-    """
-    payload schema ที่รองรับ:
-    {
-        "source": "sensor_1",
-        "data": {...}
-    }
-    """
+    source = msg.get("source")
+    data = msg.get("payload")
 
-    if not payload or not isinstance(payload, dict):
-        return
-
-    source = payload.get("source")
-    data = payload.get("data")
+    print("[DEBUG][handler] source =", source, flush=True)
+    print("[DEBUG][handler] payload keys =", list(data.keys()) if isinstance(data, dict) else data, flush=True)
 
     if not source or not isinstance(data, dict):
+        print("[DEBUG][handler] INVALID schema", flush=True)
         return
-
-    # ✅ ใช้ push เท่านั้น (Aggregator ไม่มี update)
-    aggregator.push(
+    
+    aggregator.update(
         uplink_name=uplink_name,
-        payload={
-            "service": source,
-            "data": data,
-        }
+        source=source,
+        data=data,
     )
 
 
-# =========================================================
-# UPDATE UPLINK CONFIG HANDLER
-# =========================================================
-
-def handle_update_uplink_config(
-    config_path: str,
-    cfg_mgr,
-    payload: Dict
-) -> Tuple[bool, str]:
+def handle_update_uplink_config(config_path: str, cfg_mgr, msg: Dict):
     """
-    payload:
+    RPC payload:
     {
+      "payload": {
         "uplinks": [
-            { "name": "...", "enabled": true, "interval_sec": 10 }
+          { "name": "...", "enabled": true, "interval_sec": 10 }
         ]
+      }
     }
     """
+    if not isinstance(msg, dict):
+        return False, "invalid msg"
 
-    if not payload or "uplinks" not in payload:
-        return False, "invalid payload"
+    payload = msg.get("payload")
+    if not isinstance(payload, dict):
+        return False, "missing payload"
 
-    new_uplinks = payload["uplinks"]
-    if not isinstance(new_uplinks, list):
-        return False, "uplinks must be list"
+    uplinks = payload.get("uplinks")
+    if not isinstance(uplinks, list):
+        return False, "payload.uplinks must be list"
 
     cfg = cfg_mgr.cfg or {}
     cfg.setdefault("uplinks", [])
 
     uplinks_cfg = cfg["uplinks"]
+    uplinks_map = {u["name"]: u for u in uplinks_cfg if "name" in u}
 
-    uplinks_map = {
-        u.get("name"): u
-        for u in uplinks_cfg
-        if isinstance(u, dict) and u.get("name")
-    }
-
-    for u in new_uplinks:
+    for u in uplinks:
         name = u.get("name")
         if not name:
             continue
@@ -80,8 +60,7 @@ def handle_update_uplink_config(
         else:
             uplinks_cfg.append(u)
 
-    try:
-        cfg_mgr.write(cfg)
-        return True, "config updated"
-    except Exception as e:
-        return False, f"write config failed: {e}"
+    with open(config_path, "w", encoding="utf-8") as f:
+        yaml.safe_dump(cfg, f, sort_keys=False)
+
+    return True, "config updated"

@@ -1,87 +1,51 @@
 import requests
-from .base import UplinkBase
 
-class ThingsBoardUplink(UplinkBase):
-    def __init__(self, name: str, protocol: str, host: str, token: str):
-        super().__init__(name)
-        self.protocol = protocol.lower()
-        self.host = host
+class ThingsBoardUplink:
+    def __init__(self, name, protocol, host, token):
+        self.name = name
+        self.protocol = protocol
+        self.host = host.rstrip("/")
         self.token = token
 
+        if protocol != "http":
+            raise ValueError("Only HTTP supported")
+
+        self.url = f"{self.host}/api/v1/{self.token}/telemetry"
+
     def send(self, payload: dict):
-        telemetry = self._flatten_payload(payload)
+        raw = payload.get("payload")
+        if not isinstance(raw, dict):
+            print("[TB DEBUG] no payload -> skip send", flush=True)
+            return False
+
+        telemetry = {}
+
+        for source, blocks in raw.items():
+            if not isinstance(blocks, dict):
+                continue
+
+            for block_name, block_data in blocks.items():
+                if not isinstance(block_data, dict):
+                    continue
+
+                for k, v in block_data.items():
+                    telemetry[f"{block_name}_{k}"] = v
 
         if not telemetry:
             print("[TB DEBUG] telemetry EMPTY -> skip send", flush=True)
-            return
+            return False
 
-        if self.protocol == "http":
-            self._send_http(telemetry)
-        elif self.protocol == "mqtt":
-            self._send_mqtt(telemetry)
-        else:
-            raise ValueError(f"unsupported protocol: {self.protocol}")
-
-    # ---------- HTTP ----------
-    def _send_http(self, telemetry: dict):
-        url = f"https://{self.host}/api/v1/{self.token}/telemetry"
-
-        headers = {
-            "Content-Type": "application/json",
-        }
-
-        print("========== TB SEND DEBUG ==========")
-        print("[TB DEBUG] protocol = https")
-        print(f"[TB DEBUG] POST {url}")
-        print(f"[TB DEBUG] telemetry = {telemetry}")
+        print(f"[TB DEBUG] POST telemetry keys={list(telemetry.keys())}", flush=True)
 
         resp = requests.post(
-            url,
-            headers=headers,
+            self.url,
             json=telemetry,
             timeout=5,
-            allow_redirects=False,   # << สำคัญมาก
         )
 
-        print(f"[TB DEBUG] HTTP status={resp.status_code}")
-        print(f"[TB DEBUG] body={resp.text}")
-        print("=================================")
-
-        if resp.status_code in (301, 302, 307, 308):
+        if resp.status_code >= 300:
             raise RuntimeError(
-                f"TB redirected status={resp.status_code}, location={resp.headers.get('Location')}"
+                f"ThingsBoard uplink failed status={resp.status_code} body={resp.text}"
             )
 
-        if resp.status_code not in (200, 201):
-            raise RuntimeError(
-                f"TB HTTP failed status={resp.status_code}, body={resp.text}"
-            )
-
-
-    # ---------- MQTT (ยังไม่ใช้ก็ได้) ----------
-    def _send_mqtt(self, telemetry: dict):
-        raise NotImplementedError("TB MQTT not implemented yet")
-
-    # ---------- FLATTEN ----------
-    def _flatten_payload(self, payload: dict) -> dict:
-        flat = {}
-
-        services = payload.get("services", {})
-        if isinstance(services, dict):
-            for svc, data in services.items():
-                if isinstance(data, dict):
-                    for k, v in data.items():
-                        flat[f"{svc}_{k}"] = v
-                else:
-                    flat[svc] = data
-
-        health = payload.get("health", {})
-        if isinstance(health, dict):
-            for section, data in health.items():
-                if isinstance(data, dict):
-                    for k, v in data.items():
-                        flat[f"health_{section}_{k}"] = v
-                else:
-                    flat[f"health_{section}"] = data
-
-        return flat
+        return True

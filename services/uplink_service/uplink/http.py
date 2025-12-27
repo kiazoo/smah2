@@ -1,20 +1,22 @@
-import json
 import requests
 
-
 class HttpUplink:
-    def __init__(self, name: str, url: str, headers: dict):
+    def __init__(self, name: str, url: str, headers=None):
         self.name = name
         self.url = url
-        self.headers = headers or {}
+        self.headers = headers or {"Content-Type": "application/json"}
 
     def send(self, payload: dict):
-        if not payload:
-            return
+        # 👉 ส่งเฉพาะ payload.payload
+        data = payload.get("payload")
+
+        if not isinstance(data, dict):
+            print("[HTTP DEBUG] no payload -> skip send", flush=True)
+            return False
 
         resp = requests.post(
             self.url,
-            json=payload,
+            json=data,
             headers=self.headers,
             timeout=5,
         )
@@ -23,3 +25,5 @@ class HttpUplink:
             raise RuntimeError(
                 f"HTTP uplink failed status={resp.status_code} body={resp.text}"
             )
+
+        return True
